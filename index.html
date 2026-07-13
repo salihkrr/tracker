@@ -66,7 +66,9 @@
     color: var(--text-muted);
     text-align: center;
     min-width: 170px;
+    cursor: pointer;
   }
+  .date:active { color: var(--gold); }
   .nav-arrow {
     background: var(--card);
     border: 1px solid var(--card-border);
@@ -119,6 +121,10 @@
     bottom: -1px; left: 20%; right: 20%;
     height: 2px;
     background: var(--gold);
+  }
+  .tab-count {
+    margin-left: 6px;
+    color: var(--gold);
   }
   main {
     flex: 1;
@@ -291,8 +297,8 @@
     </div>
     <h1>Tracker</h1>
     <div class="tabs">
-      <button class="tab active" data-view="habits">Gewohnheiten</button>
-      <button class="tab" data-view="todos">Aufgaben</button>
+      <button class="tab active" data-view="habits">Gewohnheiten<span class="tab-count" id="habitsCount"></span></button>
+      <button class="tab" data-view="todos">Aufgaben<span class="tab-count" id="todosCount"></span></button>
     </div>
   </header>
   <main>
@@ -321,10 +327,17 @@ let state = { habits: [], todos: [] };
 const WEEKDAYS = ['So','Mo','Di','Mi','Do','Fr','Sa'];
 const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 function todayStr(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() - offsetDays);
-  return d.toISOString().slice(0,10);
+  return formatDate(d);
 }
 
 // Tag, den der Nutzer sich gerade ansieht (Standard: heute)
@@ -333,7 +346,7 @@ let viewedDate = todayStr(0);
 function dateRelativeTo(baseStr, offsetDays) {
   const d = new Date(baseStr + 'T00:00:00');
   d.setDate(d.getDate() - offsetDays);
-  return d.toISOString().slice(0,10);
+  return formatDate(d);
 }
 
 function shiftViewedDate(days) {
@@ -383,6 +396,7 @@ function calcStreak(habit) {
 }
 
 function renderHabits() {
+  renderTabCounts();
   const list = document.getElementById('habitList');
   if (state.habits.length === 0) {
     list.innerHTML = '<div class="empty">Noch keine Gewohnheit angelegt.</div>';
@@ -440,6 +454,7 @@ function renderHabits() {
 }
 
 function renderTodos() {
+  renderTabCounts();
   const list = document.getElementById('todoList');
   if (state.todos.length === 0) {
     list.innerHTML = '<div class="empty">Keine offenen Aufgaben.</div>';
@@ -476,6 +491,13 @@ function renderTodos() {
     item.appendChild(remove);
     list.appendChild(item);
   });
+}
+
+function renderTabCounts() {
+  const openHabits = state.habits.filter(h => !h.doneDates.includes(viewedDate)).length;
+  const openTodos = state.todos.filter(t => !t.done).length;
+  document.getElementById('habitsCount').textContent = openHabits > 0 ? openHabits : '';
+  document.getElementById('todosCount').textContent = openTodos > 0 ? openTodos : '';
 }
 
 function render() {
@@ -518,6 +540,10 @@ document.querySelectorAll('.tab').forEach(tab => {
 
 document.getElementById('prevDayBtn').onclick = () => shiftViewedDate(-1);
 document.getElementById('nextDayBtn').onclick = () => shiftViewedDate(1);
+document.getElementById('dateLabel').onclick = () => {
+  viewedDate = todayStr(0);
+  render();
+};
 
 loadState();
 </script>
